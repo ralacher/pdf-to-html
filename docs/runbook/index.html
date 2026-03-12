@@ -847,7 +847,145 @@
       outline: 2px solid var(--accent-sky);
       outline-offset: 2px;
     }
+    
+    /* ==================== LIGHT THEME ==================== */
+    html.light {
+      /* Layout colors */
+      --deep-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --surface: #f1f5f9;
+      --surface-hover: #e2e8f0;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #5b6b80;       /* 5.4:1 on white, 5.0:1 on surface */
+      --border: rgba(0, 0, 0, 0.1);
+      --border-hover: rgba(0, 0, 0, 0.18);
+      
+      /* Accent colors – darkened for AA contrast on light backgrounds */
+      --accent-sky: #0369a1;       /* 5.9:1 on white */
+      --accent-emerald: #047857;   /* 5.5:1 on white, 5.0:1 on surface */
+      --accent-amber: #b45309;     /* 5.0:1 on white */
+      --accent-red: #c81e1e;       /* 5.7:1 on white, 5.2:1 on surface */
+      --accent-orange: #c2410c;    /* 5.2:1 on white */
+    }
+
+    html.light a:hover {
+      color: #075985;
+    }
+
+    html.light code {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    html.light .header {
+      background: rgba(248, 250, 252, 0.9);
+    }
+
+    html.light thead {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    html.light tbody tr:hover {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    html.light td {
+      border-bottom-color: rgba(0, 0, 0, 0.06);
+    }
+
+    html.light .tile:hover {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    html.light .callout-warning {
+      background: rgba(180, 83, 9, 0.08);
+    }
+
+    html.light .callout-critical {
+      background: rgba(220, 38, 38, 0.07);
+    }
+
+    html.light .callout-info {
+      background: rgba(3, 105, 161, 0.07);
+    }
+
+    html.light .callout-success {
+      background: rgba(5, 150, 105, 0.07);
+    }
+
+    html.light .arch-node:hover {
+      box-shadow: 0 8px 24px rgba(3, 105, 161, 0.12);
+    }
+
+    html.light .arch-node-primary:hover {
+      box-shadow: 0 8px 24px rgba(0, 51, 102, 0.2);
+    }
+
+    /* Terminal stays dark in light mode — reset vars to dark palette */
+    html.light .terminal {
+      --accent-sky: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-orange: #fb923c;
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --surface: #162d50;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+    }
+
+    html.light .terminal-body code {
+      background: none;
+      color: inherit;
+    }
+
+    /* ==================== THEME TOGGLE ==================== */
+    .theme-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 1.15rem;
+      line-height: 1;
+      transition: background var(--transition-fast),
+                  border-color var(--transition-fast),
+                  color var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+      padding: 0;
+    }
+
+    .theme-toggle:hover {
+      background: var(--surface);
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    /* Dark mode (default): show sun icon to invite switching to light */
+    .theme-toggle .icon-moon { display: none; }
+    .theme-toggle .icon-sun  { display: inline; }
+
+    html.light .theme-toggle .icon-sun  { display: none; }
+    html.light .theme-toggle .icon-moon { display: inline; }
+
+    @media print {
+      .theme-toggle { display: none; }
+    }
   </style>
+  <!-- Inline theme init: runs before first paint to prevent flash -->
+  <script>
+    (function() {
+      var saved = localStorage.getItem('runbook-theme');
+      var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      if (theme === 'light') document.documentElement.classList.add('light');
+    })();
+  </script>
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -866,6 +1004,11 @@
           <li><a href="#incidents">Incidents</a></li>
         </ul>
       </nav>
+      <button class="theme-toggle" id="theme-toggle" type="button"
+              aria-label="Switch to light mode" title="Toggle color theme">
+        <span class="icon-sun" aria-hidden="true">☀️</span>
+        <span class="icon-moon" aria-hidden="true">🌙</span>
+      </button>
     </div>
   </header>
   
@@ -1810,6 +1953,37 @@
           });
         }
       });
+    });
+    
+    // ==================== THEME TOGGLE ====================
+    const themeToggle = document.getElementById('theme-toggle');
+    
+    function setTheme(theme) {
+      if (theme === 'light') {
+        document.documentElement.classList.add('light');
+        themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+      } else {
+        document.documentElement.classList.remove('light');
+        themeToggle.setAttribute('aria-label', 'Switch to light mode');
+      }
+      localStorage.setItem('runbook-theme', theme);
+    }
+    
+    // Set correct aria-label on load (early script already set the class)
+    if (document.documentElement.classList.contains('light')) {
+      themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+    }
+    
+    themeToggle.addEventListener('click', function() {
+      var isLight = document.documentElement.classList.contains('light');
+      setTheme(isLight ? 'dark' : 'light');
+    });
+    
+    // Respond to OS-level theme changes when user hasn't set a preference
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+      if (!localStorage.getItem('runbook-theme')) {
+        setTheme(e.matches ? 'light' : 'dark');
+      }
     });
     
     // ==================== KEYBOARD SHORTCUTS ====================

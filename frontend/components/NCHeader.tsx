@@ -20,7 +20,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 export default function NCHeader() {
   return (
     <header role="banner" className="nc-header">
-      <div className="container">
+      <div className="header-container">
         <div className="header-inner">
           {/* Logo + Branding */}
           <div className="header-brand">
@@ -53,6 +53,12 @@ export default function NCHeader() {
       </div>
 
       <style jsx>{`
+        .header-container {
+          width: 100%;
+          padding-left: var(--space-lg, 1.5rem);
+          padding-right: var(--space-lg, 1.5rem);
+        }
+
         .header-inner {
           display: flex;
           align-items: center;
@@ -154,6 +160,11 @@ export default function NCHeader() {
         }
 
         @media (max-width: 575.98px) {
+          .header-container {
+            padding-left: var(--space-md, 1rem);
+            padding-right: var(--space-md, 1rem);
+          }
+
           .header-logo__mark,
           .header-logo__dot {
             font-size: 1.2rem;
