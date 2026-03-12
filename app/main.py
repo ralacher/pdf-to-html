@@ -16,6 +16,8 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import os
+import sys
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -44,6 +46,25 @@ from backend.models import (
     DocumentStatus,
 )
 
+
+# ---------------------------------------------------------------------------
+# Structured logging
+# ---------------------------------------------------------------------------
+
+def configure_logging() -> None:
+    """Set up structured logging with consistent formatting."""
+    log_level = os.environ.get("LOG_LEVEL", "INFO")
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+    handler.setFormatter(formatter)
+    logging.basicConfig(
+        level=getattr(logging, log_level, logging.INFO), handlers=[handler]
+    )
+
+
+configure_logging()
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 {
+  "_deprecated": "This file is an Azure Functions config. The project has migrated to Container Apps — see docker-compose.yml and infra/ for the new setup.",
   "version": "2.0",
   "logging": {
     "applicationInsights": {

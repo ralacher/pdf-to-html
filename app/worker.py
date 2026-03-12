@@ -502,9 +502,14 @@ class ConversionWorker:
 
 def main() -> None:
     """Start the conversion worker."""
+    log_level = os.environ.get("LOG_LEVEL", "INFO")
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
+    handler.setFormatter(formatter)
     logging.basicConfig(
-        level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        level=getattr(logging, log_level, logging.INFO), handlers=[handler]
     )
     worker = ConversionWorker()
     worker.start()

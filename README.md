@@ -258,6 +258,36 @@ This project uses [GitHub Spec Kit](https://github.com/github/spec-kit) for spec
 | 🔌 API Contracts | `specs/001-sean/contracts/` | Upload, Status, Download APIs |
 | ✅ Tasks | `specs/001-sean/tasks.md` | 79 actionable implementation tasks |
 
+## 🐳 Container Apps Architecture
+
+> **Migration complete** — the backend has been migrated from Azure Functions to Azure Container Apps (FastAPI + queue worker).
+
+| Component | Technology | Entry Point |
+|-----------|-----------|-------------|
+| **HTTP API** | FastAPI + Uvicorn | `app/main.py` |
+| **Queue Worker** | Azure Storage Queue polling | `app/worker.py` |
+| **Frontend** | Next.js 14 (standalone) | `frontend/` |
+| **Local Storage** | Azurite emulator | `docker-compose.yml` |
+| **Infrastructure** | Bicep IaC | `infra/` |
+
+### Local Development
+
+```bash
+# Recommended: all services in one command
+docker-compose up --build
+
+# Services:
+#   Frontend:  http://localhost:3000
+#   Backend:   http://localhost:8000
+#   Azurite:   ports 10000-10002
+```
+
+Or run each process manually — see [`MIGRATION.md`](MIGRATION.md) for the 4-terminal setup.
+
+For full migration details, rollback procedure, and environment variables, see:
+- [`MIGRATION.md`](MIGRATION.md)
+- [`specs/004-container-apps-migration/plan.md`](specs/004-container-apps-migration/plan.md)
+
 ## 📌 Dependency Versions
 
 > Pulled from `requirements.txt`, `frontend/package.json`, and `host.json`

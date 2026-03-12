@@ -5,7 +5,7 @@ const nextConfig = {
     styledComponents: false,
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:7071';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     return [
       {
         // Proxy all /api/* requests to the backend EXCEPT /api/preview/*,

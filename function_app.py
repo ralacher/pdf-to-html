@@ -1,3 +1,9 @@
+# ⚠️ DEPRECATED — This file is the legacy Azure Functions entry point.
+# It has been replaced by:
+#   - app/main.py    (FastAPI HTTP endpoints)
+#   - app/worker.py  (Queue-based conversion worker)
+# Kept as reference and rollback fallback. Not deployed to Container Apps.
+
 import io
 import json
 import logging
