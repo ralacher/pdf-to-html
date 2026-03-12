@@ -1,0 +1,6 @@
+# Ignore encrypted versions (do NOT commit encrypted runbook)
+*_encrypted.html
+index_encrypted_backup.html
+
+# Keep only the source unencrypted version in version control
+!index.html

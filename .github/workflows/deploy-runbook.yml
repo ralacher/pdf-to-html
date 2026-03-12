@@ -1,0 +1,55 @@
+name: Deploy Runbook to GitHub Pages
+
+on:
+  push:
+    branches: [001-sean, main]
+    paths: ['docs/runbook/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Encrypt runbook with StaticCrypt
+        run: |
+          npm install -g staticrypt
+          mkdir -p _site/runbook
+          staticrypt docs/runbook/index.html -p "${{ secrets.RUNBOOK_PASSWORD }}" \
+            -o _site/runbook/index.html \
+            --short \
+            --template-title "NCDIT Operations Runbook" \
+            --template-instructions "Enter the runbook password to access operations documentation." \
+            --template-color-primary "#003366" \
+            --template-color-secondary "#0a1628"
+      
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
