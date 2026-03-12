@@ -3,6 +3,7 @@
 # azure-monitor-opentelemetry
 
 azure-functions
+flask
 pymupdf
 azure-ai-documentintelligence
 azure-identity
