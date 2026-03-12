@@ -1,5 +1,7 @@
 """
 Azure Document Intelligence integration for OCR on scanned PDF pages.
+Authenticates via Entra ID (DefaultAzureCredential) by default; falls back
+to API key if DOCUMENT_INTELLIGENCE_KEY is set.
 Uses the prebuilt-layout model to extract text, tables, and reading order.
 """
 
@@ -66,17 +68,23 @@ class OcrPageResult:
 def _get_client() -> DocumentIntelligenceClient:
     """Create a Document Intelligence client.
 
-    Uses API key (DOCUMENT_INTELLIGENCE_KEY) if set, otherwise falls back
-    to Entra ID via DefaultAzureCredential.
+    Prefers Entra ID (DefaultAzureCredential) for keyless auth.
+    Falls back to API key only when DOCUMENT_INTELLIGENCE_KEY is set,
+    which logs a deprecation warning.
     """
     endpoint = os.environ["DOCUMENT_INTELLIGENCE_ENDPOINT"]
     key = os.environ.get("DOCUMENT_INTELLIGENCE_KEY")
     if key:
+        logger.warning(
+            "Using API key for Document Intelligence — prefer Entra ID "
+            "(remove DOCUMENT_INTELLIGENCE_KEY to use DefaultAzureCredential)"
+        )
         from azure.core.credentials import AzureKeyCredential
         return DocumentIntelligenceClient(
             endpoint=endpoint,
             credential=AzureKeyCredential(key),
         )
+    logger.info("Using DefaultAzureCredential for Document Intelligence")
     return DocumentIntelligenceClient(
         endpoint=endpoint,
         credential=DefaultAzureCredential(),

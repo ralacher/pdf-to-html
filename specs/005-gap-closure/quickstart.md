@@ -8,8 +8,9 @@
    (`DefaultAzureCredential`) first, API key only as fallback with a WARNING log.
 2. **Worker startup health check**: `app/worker.py` tests Document Intelligence
    connectivity on startup and logs the auth method.
-3. **RBAC script added**: `scripts/assign-di-rbac.sh` assigns `Cognitive Services
-   User` role to the worker's managed identity.
+3. **RBAC script updated**: `scripts/assign-storage-rbac.sh` now also assigns
+   `Cognitive Services User` role to the worker's managed identity for Entra ID
+   OCR auth on Document Intelligence.
 4. **Bicep updated**: `AZURE_CLIENT_ID` added to shared env vars; no
    `DOCUMENT_INTELLIGENCE_KEY` in IaC.
 
@@ -45,11 +46,16 @@ or, with API key:
 git push origin 005-gap-closure
 ```
 
-### Step 2: Assign RBAC role to managed identity
+### Step 2: Assign RBAC roles (storage + Document Intelligence)
 
 ```bash
-# Requires Owner or User Access Administrator on the DI resource
-bash scripts/assign-di-rbac.sh
+# Requires Owner or User Access Administrator on the target resources.
+# This script assigns both storage RBAC and Cognitive Services User role
+# for Entra ID OCR auth on Document Intelligence.
+#
+# Override DI defaults via env vars if needed:
+#   DI_ACCOUNT_NAME=my-di-resource DI_RESOURCE_GROUP=my-rg bash scripts/assign-storage-rbac.sh
+bash scripts/assign-storage-rbac.sh
 ```
 
 ### Step 3: Remove API key from production env vars
@@ -88,6 +94,6 @@ pytest tests/unit/test_ocr_auth.py -v
 | `backend/ocr_service.py` | Invert auth priority in `_get_client()` |
 | `app/worker.py` | Add `_check_di_connectivity()` startup check |
 | `infra/modules/container-apps.bicep` | Add `AZURE_CLIENT_ID` env var |
-| `scripts/assign-di-rbac.sh` | NEW — RBAC assignment for DI |
+| `scripts/assign-storage-rbac.sh` | UPDATED — DI RBAC for Entra ID OCR |
 | `tests/unit/test_ocr_auth.py` | NEW — tests for auth inversion |
 | `tests/unit/test_worker_health.py` | NEW — tests for DI health check |

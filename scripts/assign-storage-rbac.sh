@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # assign-storage-rbac.sh
 # -----------------------------------------------------------------------
-# Assigns required RBAC roles to the Function App's managed identity
-# so it can access the storage account via identity-based auth.
+# Assigns required RBAC roles to managed identities for:
+#   1. Storage — Function App MSI + CI/CD SPN on the storage account
+#   2. Document Intelligence — Worker container app on the DI resource
 #
 # UPDATED: Now targets the cross-subscription storage account in Sean's
 # Owner subscription (098ef2f6-...) instead of the MCAPS subscription.
 #
-# REQUIRES: Owner or User Access Administrator role on the storage account.
+# REQUIRES: Owner or User Access Administrator role on the target resources.
 # The Contributor SPN cannot run this — an admin (Sean) must execute it.
 #
 # For the full cross-subscription setup (resource group, storage account,
@@ -29,12 +30,23 @@ STORAGE_RG="rg-pdf-to-html-storage"
 STORAGE_ACCOUNT="stpdftohtmldata"
 STORAGE_SCOPE="/subscriptions/${STORAGE_SUB}/resourceGroups/${STORAGE_RG}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT}"
 
+# Document Intelligence (for OCR with Entra ID auth)
+DI_SUB="${DI_SUBSCRIPTION_ID:-$STORAGE_SUB}"
+DI_RG="${DI_RESOURCE_GROUP:-rg-pdftohtml}"
+DI_ACCOUNT="${DI_ACCOUNT_NAME:-ncdit-doc-intelligence}"
+DI_SCOPE="/subscriptions/${DI_SUB}/resourceGroups/${DI_RG}/providers/Microsoft.CognitiveServices/accounts/${DI_ACCOUNT}"
+
+# Worker Container App (target for DI RBAC)
+WORKER_APP_NAME="${WORKER_APP_NAME:-ca-pdftohtml-worker}"
+WORKER_RG="${WORKER_RESOURCE_GROUP:-rg-pdftohtml}"
+
 echo "============================================="
 echo " RBAC Role Assignment for pdf-to-html"
-echo " Cross-Subscription Storage Setup"
+echo " Storage + Document Intelligence"
 echo "============================================="
 echo ""
 echo "Storage scope: $STORAGE_SCOPE"
+echo "DI scope:      $DI_SCOPE"
 echo ""
 
 # ---- MSI Roles (Function App) ----
@@ -99,6 +111,32 @@ if [ -n "$SPN_OBJECT_ID" ]; then
   echo "  ✅ SPN roles assigned"
 else
   echo "  ⚠️  Could not resolve SPN object ID — assign manually"
+fi
+
+# ---- Document Intelligence Roles (Worker Container App) ----
+echo ""
+echo "Assigning RBAC roles for Document Intelligence OCR..."
+
+WORKER_PRINCIPAL_ID=$(az containerapp show \
+  --name "$WORKER_APP_NAME" \
+  --resource-group "$WORKER_RG" \
+  --query "identity.principalId" -o tsv 2>/dev/null || echo "")
+
+if [ -n "$WORKER_PRINCIPAL_ID" ]; then
+  echo "  Worker principal ID: $WORKER_PRINCIPAL_ID"
+
+  # Cognitive Services User — invoke Document Intelligence OCR via Entra ID
+  az role assignment create \
+    --assignee-object-id "$WORKER_PRINCIPAL_ID" \
+    --assignee-principal-type ServicePrincipal \
+    --role "Cognitive Services User" \
+    --scope "$DI_SCOPE" \
+    -o none 2>/dev/null || echo "  (Cognitive Services User may already exist)"
+
+  echo "  ✅ Document Intelligence roles assigned"
+else
+  echo "  ⚠️  Could not get worker principal ID — assign manually:"
+  echo "     az role assignment create --assignee <PRINCIPAL_ID> --role 'Cognitive Services User' --scope '$DI_SCOPE'"
 fi
 
 echo ""

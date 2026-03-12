@@ -64,6 +64,8 @@ class ConversionWorker:
         signal.signal(signal.SIGTERM, self._handle_signal)
         signal.signal(signal.SIGINT, self._handle_signal)
 
+        self._check_di_connectivity()
+
         logger.info(
             "Worker started — polling queue '%s' every %ds",
             settings.QUEUE_NAME,
@@ -87,6 +89,43 @@ class ConversionWorker:
     def _handle_signal(self, signum: int, _frame) -> None:  # noqa: ANN001
         logger.info("Received signal %s — shutting down", signal.Signals(signum).name)
         self.stop()
+
+    # -- Startup checks -----------------------------------------------------
+
+    def _check_di_connectivity(self) -> None:
+        """Test Document Intelligence auth on startup (informational only).
+
+        This check runs once during worker startup to surface
+        authentication issues early.  It NEVER raises — failures are
+        logged as warnings so the worker can still process non-scanned
+        documents.
+        """
+        try:
+            endpoint = os.environ.get("DOCUMENT_INTELLIGENCE_ENDPOINT")
+            if not endpoint:
+                logger.info(
+                    "Document Intelligence not configured — OCR will be skipped"
+                )
+                return
+
+            key = os.environ.get("DOCUMENT_INTELLIGENCE_KEY")
+            auth_method = "API key" if key else "Entra ID (DefaultAzureCredential)"
+
+            # Try to create client — validates credentials
+            from backend.ocr_service import _get_client
+
+            _get_client()
+
+            logger.info(
+                "Document Intelligence connectivity OK (auth: %s)",
+                auth_method,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Document Intelligence connectivity check failed: %s — "
+                "OCR may fail on scanned documents",
+                exc,
+            )
 
     # -- Queue polling ------------------------------------------------------
 
