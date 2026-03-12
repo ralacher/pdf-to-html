@@ -49,11 +49,21 @@ jobs:
             --image pdf-to-html-api:latest \
             --file Dockerfile.backend .
 
+      - name: Get API FQDN
+        id: api-fqdn
+        run: |
+          FQDN=$(az containerapp show \
+            --name ca-pdftohtml-api \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "url=https://${FQDN}" >> "$GITHUB_OUTPUT"
+
       - name: Build frontend image
         run: |
           az acr build --registry ${{ env.ACR_NAME }} \
             --image pdf-to-html-frontend:${{ env.IMAGE_TAG }} \
             --image pdf-to-html-frontend:latest \
+            --build-arg BACKEND_URL=${{ steps.api-fqdn.outputs.url }} \
             --file frontend/Dockerfile frontend/
 
       # ── Deploy Container Apps ────────────────────────────

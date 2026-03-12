@@ -2,7 +2,7 @@
 
 **🟢 PASS** — All documents meet WCAG 2.1 AA compliance
 
-**Generated:** 2026-03-12T01:44:41.408723+00:00
+**Generated:** 2026-03-12T12:03:00.275874+00:00
 **Samples directory:** `/workspaces/pdf-to-html/tests/eval/samples`
 
 ---
@@ -23,10 +23,10 @@
 
 | Document | Pages | Time (ms) | Headings | Tables | Images | Critical | Serious | Moderate | Minor | Result |
 |----------|------:|----------:|---------:|-------:|-------:|---------:|--------:|---------:|------:|--------|
-| complex-tables.pdf | 2 | 167 | 100.0% | 100.0% | 100.0% | 0 | 0 | 0 | 0 | ✅ PASS |
-| digital-report.pdf | 5 | 87 | 100.0% | 100.0% | 100.0% | 0 | 0 | 0 | 0 | ✅ PASS |
-| image-heavy.pdf | 3 | 19 | 100.0% | 100.0% | 100.0% | 0 | 0 | 0 | 0 | ✅ PASS |
-| simple-memo.pdf | 1 | 25 | 100.0% | 100.0% | 100.0% | 0 | 0 | 0 | 0 | ✅ PASS |
+| complex-tables.pdf | 2 | 117 | 100.0% | 100.0% | 100.0% | 0 | 0 | 0 | 0 | ✅ PASS |
+| digital-report.pdf | 5 | 117 | 100.0% | 100.0% | 100.0% | 0 | 0 | 0 | 0 | ✅ PASS |
+| image-heavy.pdf | 3 | 33 | 100.0% | 100.0% | 100.0% | 0 | 0 | 0 | 0 | ✅ PASS |
+| simple-memo.pdf | 1 | 58 | 100.0% | 100.0% | 100.0% | 0 | 0 | 0 | 0 | ✅ PASS |
 
 ---
 
@@ -34,10 +34,10 @@
 
 | Document | Source Pages | Conversion Time | Violations Found | Compliance Score |
 |----------|------------:|-----------------|-----------------:|------------------|
-| complex-tables.pdf | 2 | 167 ms | 0 | ✅ PASS |
-| digital-report.pdf | 5 | 87 ms | 0 | ✅ PASS |
-| image-heavy.pdf | 3 | 19 ms | 0 | ✅ PASS |
-| simple-memo.pdf | 1 | 25 ms | 0 | ✅ PASS |
+| complex-tables.pdf | 2 | 117 ms | 0 | ✅ PASS |
+| digital-report.pdf | 5 | 117 ms | 0 | ✅ PASS |
+| image-heavy.pdf | 3 | 33 ms | 0 | ✅ PASS |
+| simple-memo.pdf | 1 | 58 ms | 0 | ✅ PASS |
 
 ---
 

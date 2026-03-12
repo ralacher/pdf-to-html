@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-03-12T01:44:41.408723+00:00",
+  "timestamp": "2026-03-12T12:03:00.275874+00:00",
   "samples_dir": "/workspaces/pdf-to-html/tests/eval/samples",
   "documents": [
     {
       "filename": "complex-tables.pdf",
       "page_count": 2,
-      "conversion_time_ms": 167,
+      "conversion_time_ms": 117,
       "violations": {
         "critical": 0,
         "serious": 0,
@@ -24,7 +24,7 @@
     {
       "filename": "digital-report.pdf",
       "page_count": 5,
-      "conversion_time_ms": 87,
+      "conversion_time_ms": 117,
       "violations": {
         "critical": 0,
         "serious": 0,
@@ -43,7 +43,7 @@
     {
       "filename": "image-heavy.pdf",
       "page_count": 3,
-      "conversion_time_ms": 19,
+      "conversion_time_ms": 33,
       "violations": {
         "critical": 0,
         "serious": 0,
@@ -62,7 +62,7 @@
     {
       "filename": "simple-memo.pdf",
       "page_count": 1,
-      "conversion_time_ms": 25,
+      "conversion_time_ms": 58,
       "violations": {
         "critical": 0,
         "serious": 0,
