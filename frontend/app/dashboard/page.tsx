@@ -28,13 +28,6 @@ interface TileConfig {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function allTerminal(documents: DocumentStatus[]): boolean {
-  if (documents.length === 0) return false;
-  return documents.every(
-    (d) => d.status === 'completed' || d.status === 'failed'
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Dashboard Page
 // ---------------------------------------------------------------------------
@@ -71,7 +64,7 @@ export default function DashboardPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPolling, setIsPolling] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const stopPollingRef = useRef<(() => void) | null>(null);
 
   // Preview modal state (T063)
@@ -106,14 +99,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!isPolling) return;
+    if (!autoRefresh) return;
 
     const stopFn = startPolling((response) => {
       handleUpdate(response);
-
-      if (allTerminal(response.documents)) {
-        setIsPolling(false);
-      }
     }, 3000);
 
     stopPollingRef.current = stopFn;
@@ -122,7 +111,7 @@ export default function DashboardPage() {
       stopFn();
       stopPollingRef.current = null;
     };
-  }, [isPolling, handleUpdate]);
+  }, [autoRefresh, handleUpdate]);
 
   useEffect(() => {
     const origConsoleError = console.error;
@@ -145,12 +134,12 @@ export default function DashboardPage() {
   // -----------------------------------------------------------------------
 
   const handleRetry = useCallback((documentId: string) => {
-    setIsPolling(true);
+    setAutoRefresh(true);
     console.info(`[Dashboard] Retry requested for document: ${documentId}`);
   }, []);
 
   const handleManualRefresh = useCallback(() => {
-    setIsPolling(true);
+    setAutoRefresh(true);
     setError(null);
   }, []);
 
@@ -288,7 +277,7 @@ export default function DashboardPage() {
         failed: 0,
       });
 
-      setIsPolling(false);
+      setAutoRefresh(false);
 
       announce('All documents have been deleted.');
       setShowClearAll(false);
@@ -404,13 +393,24 @@ export default function DashboardPage() {
         <div className="section-bar">
           <h2 className="section-bar__title">Documents</h2>
           <div className="section-bar__actions">
-            {isPolling && (
-              <span className="badge bg-info" data-testid="polling-badge">
-                <span className="spinner-grow spinner-grow-sm" role="status" aria-hidden="true" />
-                Auto-refreshing
-              </span>
-            )}
-            {!isPolling && documents.length > 0 && (
+            <button
+              type="button"
+              className={`btn btn-sm ${autoRefresh ? 'btn-info' : 'btn-outline-secondary'}`}
+              onClick={() => setAutoRefresh((prev) => !prev)}
+              aria-pressed={autoRefresh}
+              data-testid="auto-refresh-toggle"
+              title={autoRefresh ? 'Auto-refresh is on (click to pause)' : 'Auto-refresh is off (click to resume)'}
+            >
+              {autoRefresh ? (
+                <>
+                  <span className="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true" />
+                  Auto-refresh On
+                </>
+              ) : (
+                '⏸ Auto-refresh Off'
+              )}
+            </button>
+            {!autoRefresh && (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-secondary"
