@@ -30,6 +30,8 @@ Blob Storage (files/{name}.pdf)
         │
         └── Upload to Blob Storage (converted/)
 ```
+### Diagram 
+<img width="960" height="431" alt="065a24d5-b2b8-4369-9117-1c2d3199fa7c" src="https://github.com/user-attachments/assets/8d3c839c-e65e-4bb6-bda0-9986a953a3cb" />
 
 ## Prerequisites
 
