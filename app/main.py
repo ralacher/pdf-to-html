@@ -24,7 +24,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 from azure.core.exceptions import ResourceNotFoundError
-from azure.storage.blob import BlobSasPermissions
+from azure.storage.blob import BlobSasPermissions, ContentSettings
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -281,6 +281,25 @@ async def generate_sas_token(body: dict):
             blob_client.upload_blob(b"", overwrite=True, metadata=initial_metadata)
 
         retry_blob_operation(_create_placeholder)
+
+        # Store metadata in a sidecar blob so it survives the browser's
+        # SAS PUT (which replaces the entire blob including metadata).
+        # The worker reads this sidecar when the main blob's metadata is
+        # missing after the content overwrite.
+        meta_blob = container_client.get_blob_client(
+            f".meta/{document_id}.json"
+        )
+
+        def _create_meta_sidecar():
+            meta_blob.upload_blob(
+                json.dumps(initial_metadata).encode(),
+                overwrite=True,
+                content_settings=ContentSettings(
+                    content_type="application/json"
+                ),
+            )
+
+        retry_blob_operation(_create_meta_sidecar)
 
         # --- T021: Local dev queue simulation ---
         # When running locally (Azurite), Event Grid is not available.

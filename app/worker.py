@@ -226,17 +226,45 @@ class ConversionWorker:
 
         logger.info("Processing file: %s (%d bytes)", blob_name, len(file_data))
 
-        # --- Reconstruct metadata if wiped by SAS upload ------------------
+        # --- Recover metadata from sidecar blob if available ----------------
         existing_meta: dict[str, str] = {}
         try:
             props = blob_client.get_blob_properties()
             existing_meta = dict(props.metadata or {})
+        except Exception:
+            logger.debug(
+                "Could not read blob properties for %s", blob_name
+            )
 
-            if (
-                "document_id" not in existing_meta
-                or "status" not in existing_meta
-                or "name" not in existing_meta
-            ):
+        _meta_missing = (
+            "document_id" not in existing_meta
+            or "status" not in existing_meta
+            or "name" not in existing_meta
+        )
+
+        if _meta_missing:
+            try:
+                meta_blob = container_client.get_blob_client(
+                    f".meta/{document_id}.json"
+                )
+                meta_data = json.loads(
+                    meta_blob.download_blob().readall()
+                )
+                logger.info(
+                    "Recovered metadata from sidecar for %s", blob_name
+                )
+                blob_client.set_blob_metadata(metadata=meta_data)
+                existing_meta = meta_data
+                _meta_missing = False
+            except Exception:
+                logger.debug(
+                    "No metadata sidecar found for %s", blob_name
+                )
+
+        # --- Reconstruct metadata if still missing after sidecar check ----
+        try:
+
+            if _meta_missing:
                 ext_for_meta = (
                     ("." + base_filename.rsplit(".", 1)[-1].lower())
                     if "." in base_filename
