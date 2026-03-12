@@ -34,10 +34,11 @@ param documentIntelligenceEndpoint string = ''
 @description('Container image tag (defaults to latest)')
 param imageTag string = 'latest'
 
+@description('Azure Container Registry name (must match ACR_NAME in deploy-aca.yml)')
+param acrName string = 'crpdftohtml'
+
 // ── Variables ─────────────────────────────────────────────────
 
-var suffix = uniqueString(resourceGroup().id)
-var acrName = 'crpdftohtml${suffix}'
 var containerAppsEnvName = 'cae-pdftohtml-${environmentName}'
 var logAnalyticsName = 'log-pdftohtml-${environmentName}'
 
@@ -92,6 +93,14 @@ module eventGrid 'modules/event-grid.bicep' = {
     location: location
     storageAccountName: storageAccountName
     storageAccountResourceGroup: storageAccountResourceGroup
+  }
+}
+
+module storageCors 'modules/storage-cors.bicep' = {
+  name: 'storage-cors-deployment'
+  params: {
+    storageAccountName: storageAccountName
+    frontendUrl: containerApps.outputs.frontendFqdn
   }
 }
 
