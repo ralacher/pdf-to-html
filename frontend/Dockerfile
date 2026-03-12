@@ -4,11 +4,11 @@
 # Expected image size: < 200 MB
 # ──────────────────────────────────────────────────────────────
 
-# ── Stage 1: Install production dependencies ─────────────────
+# ── Stage 1: Install ALL dependencies (dev deps needed for build) ──
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+RUN npm ci
 
 # ── Stage 2: Build the Next.js application ───────────────────
 FROM node:20-alpine AS builder
