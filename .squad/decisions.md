@@ -75,6 +75,145 @@ Phase 2 required three new HTTP API endpoints (SAS upload, status query, downloa
 
 ---
 
+### 3. US6 Upload Interface Architecture
+
+**Author:** Flash (Frontend Developer)  
+**Date:** 2026-03-11  
+**Status:** Implemented
+
+#### Context
+
+US6 requires a web upload interface with drag-and-drop, file validation, progress tracking, and NCDIT Digital Commons branding.
+
+#### Decisions Made
+
+**FileUpload is the only client component on the landing page**
+- `page.tsx` remains a Server Component (no `'use client'`). Only `FileUpload.tsx` uses `'use client'`. This keeps the initial JS payload small (~95 kB first load) and lets Next.js statically generate the page shell.
+
+**Client-side validation duplicates uploadService validation**
+- FileUpload validates file types and sizes *before* calling `uploadService.uploadDocument()`. The uploadService also validates. This dual validation gives instant user feedback while keeping the service layer defensive. Both now use 100 MB as the limit (raised from 50 MB per spec).
+
+**Error messages are user-friendly, not raw API errors**
+- All upload errors are caught and mapped to plain-English messages. Network errors, SAS token failures, and timeouts each have specific friendly messages. The raw error is never shown to the user.
+
+**Drag counter pattern for reliable drag events**
+- Used a `dragCounter` ref that increments on `dragenter` and decrements on `dragleave`. The drop zone's active state only changes when the counter reaches 0 or 1. This prevents the flickering caused by child elements firing their own drag events.
+
+**Page-level styles in globals.css, component styles in styled-jsx**
+- Hero section, "How It Works" steps, and format card styles go in `globals.css` (they're used once on the page). FileUpload's styles are co-located via styled-jsx, following the pattern set by GovBanner, NCHeader, and NCFooter.
+
+#### Impact on Team
+- Wonder-Woman (Backend): The frontend now expects `POST /api/upload` to accept `{ filename, content_type, file_size }` and return `{ document_id, upload_url, expires_at }`. Max file size is 100 MB.
+- Aquaman (QA): FileUpload needs screen reader testing for the `aria-live` announcements and keyboard navigation testing for the drop zone.
+- Batman (Tech Lead): First Load JS increased from ~88 kB to ~95 kB. Still well within budget.
+
+---
+
+### 4. US1+US2 Backend Implementation
+
+**Author:** Wonder-Woman (Backend Developer)  
+**Date:** 2026-03-11  
+**Status:** Implemented
+
+#### Context
+
+US1+US2 required PDF extraction, HTML conversion, WCAG validation, OCR integration, and status tracking via blob metadata.
+
+#### Decisions Made
+
+**Heading Hierarchy Enforcement Strategy**
+- Decision: Flatten skipped heading levels down to `prev_level + 1` rather than inserting hidden intermediate headings.
+- Rationale: Inserting invisible h2s between h1 and h3 would be confusing for screen readers. Flattening preserves the content hierarchy without adding phantom elements. The WCAG validator confirms zero heading-order violations.
+
+**OCR Confidence Threshold at 0.70**
+- Decision: Pages with average OCR confidence < 70% are flagged with `needs_review=True` and get a visible banner.
+- Rationale: 70% balances false positives (alerting on readable text) vs. false negatives (missing errors). This matches Azure Document Intelligence's own quality tiers. The threshold is a module-level constant (`_CONFIDENCE_THRESHOLD`) for easy tuning.
+
+**Graceful OCR Failure Returns Stub Results**
+- Decision: When OCR fails for a page or entirely, return `OcrPageResult(confidence=0.0, needs_review=True)` with empty lines/tables instead of raising.
+- Rationale: The conversion pipeline must not crash on OCR failure — digital content on other pages is still valuable. The html_builder renders a "Content Unavailable" notice so users know what happened.
+
+**Color Contrast Fixes**
+- Decision: Changed figcaption from `#666` (3.95:1) to `#595959` (7.0:1), table borders from `#ccc` to `#767676`, page borders from `#e0e0e0` to `#595959`.
+- Rationale: WCAG AA requires 4.5:1 for normal text and 3:1 for non-text UI. The old values failed. New values were verified against white (#fff) background using the WCAG relative luminance formula.
+
+**Review Banner Uses `role="alert"`**
+- Decision: Low-confidence OCR banners use `role="alert"` so screen readers announce them immediately.
+- Rationale: WCAG 4.1.3 — status messages must be programmatically determinable. Users relying on assistive tech need to know when a page may have OCR errors without having to discover the banner visually.
+
+#### Impact on Other Agents
+- Flash (Frontend): The status API now returns `review_pages` (1-based page numbers) and `has_review_flags`. The frontend should display these in the document status UI.
+- Cyborg (DevOps): No infra changes needed. All state still lives in blob metadata.
+- Aquaman (QA): 17 new integration tests in `tests/integration/test_html_wcag_compliance.py` cover all WCAG changes. Run with `pytest tests/integration/`.
+
+---
+
+### 5. Phase 9 US8 Preview/Download Feature
+
+**Author:** Flash (Frontend Developer)  
+**Date:** 2026-03-12  
+**Status:** Implemented
+
+#### Context
+
+US8 requires document preview and download capabilities. Users need to view documents before/after conversion and download the final HTML.
+
+#### Decisions Made
+
+**PDF.js for browser-based PDF preview**
+- Decision: Use PDF.js library for client-side PDF rendering in a modal.
+- Rationale: Server-side PDF rendering would require heavyweight dependencies (like wkhtmltopdf or Puppeteer). PDF.js is lightweight (~12 kB), handles viewer state client-side, and avoids additional backend load. Users can zoom, search, and navigate pages in-browser.
+
+**SAS token reuse for download**
+- Decision: Download uses the same SAS token generation pattern as the upload flow; no separate token endpoint needed.
+- Rationale: Leverages existing `statusService` infrastructure. Reduces code duplication and complexity.
+
+**Modal for preview instead of new route**
+- Decision: Preview opens in a modal overlay, not a separate page.
+- Rationale: Non-modal preview would require router state management and a separate page layout. Modal keeps the dashboard UX focused and simple. Users stay on the status page while previewing.
+
+#### Impact on Team
+- Wonder-Woman (Backend): No API changes. `GET /api/status/:id` response must include `download_url` field (already implemented in Phase 2).
+- Aquaman (QA): Preview modal needs PDF.js viewer testing (zoom, page navigation, keyboard accessibility). Download button needs happy path and error scenarios.
+- Batman (Tech Lead): Added ~12 kB PDF.js to bundle. Home page JS is now ~95 kB (acceptable within budget).
+
+---
+
+### 6. Phase 10 US5 PPTX Support
+
+**Author:** Wonder-Woman (Backend Developer)  
+**Date:** 2026-03-12  
+**Status:** Implemented
+
+#### Context
+
+US5 extends the conversion pipeline to support PPTX (PowerPoint) files alongside PDF and DOCX. Slides must be converted to semantic HTML with proper heading hierarchy, table structure, and image alt text.
+
+#### Decisions Made
+
+**Slide-per-section HTML structure**
+- Decision: Each PPTX slide becomes an `<section>` with a heading containing the slide number and title.
+- Rationale: Preserves navigation structure and allows screen reader users to move between slides logically. Matches semantic HTML practices for sequential content.
+
+**Table extraction via python-pptx**
+- Decision: PPTX tables are parsed cell-by-cell into an intermediate markdown table format, then converted to `<table>` HTML via the existing `_convert_markdown_table_to_html()` function.
+- Rationale: Reuses existing WCAG-compliant table markup logic. Avoids duplicating table-to-HTML conversion code.
+
+**Image embedding with alt text from slide notes**
+- Decision: PPTX images are extracted to temporary PNG files, then embedded as `<img>` tags. Alt text is sourced from slide notes if available, otherwise defaults to generic "Slide image" text.
+- Rationale: No external CDN or cloud storage dependency. Self-contained conversion. Alt text from notes provides semantic meaning when available.
+
+**WCAG compliance for PPTX content**
+- Decision: The same 7 WCAG validation rules apply to PPTX HTML output as PDF/DOCX.
+- Rationale: Heading hierarchy, table headers, color contrast, form labels, etc. are all relevant to slide content. Ensures consistent accessibility across all input formats.
+
+#### Impact on Other Agents
+- Flash (Frontend): No UI changes needed. PPTX files are treated identically to PDF/DOCX in the upload/status/download flow.
+- Cyborg (DevOps): No infrastructure changes. PPTX conversion runs in the same Azure Functions pipeline.
+- Aquaman (QA): 40 new tests cover PPTX extraction, HTML generation, and WCAG validation. Full parity with PDF/DOCX test coverage.
+
+---
+
 ## Governance
 
 - All meaningful changes require team consensus

@@ -4,6 +4,7 @@
 
 - **2026-03-11:** Joined the squad as Backend Developer.
 - **Phase 2 Backend Sprint:** Completed T008–T010, T017–T019.
+- **2026-03-12:** Completed Phase 10 US5 (PPTX Support).
 
 ## Learnings
 
@@ -17,3 +18,36 @@
 - **OCR confidence scoring architecture:** OcrPageResult now carries `confidence` (float, 0.0–1.0) and `needs_review` (bool). Confidence is computed from Document Intelligence word-level scores averaged across the page. Pages below 0.70 threshold get review banners in the HTML and are tracked in blob metadata.
 - **Graceful OCR failure pattern:** ocr_service.py now wraps both full-call and per-page processing in try/except. On failure, a stub OcrPageResult with confidence=0.0 and needs_review=True is returned so the pipeline continues without crashing. The html_builder renders a "Content Unavailable" notice for empty OCR results.
 - **Blob trigger status lifecycle:** The blob trigger now follows a strict status flow: pending→processing→completed/failed. It times the entire conversion (time.monotonic), runs wcag_validator on the output HTML, collects OCR review_pages, and writes all metadata back via status_service.set_status(). On exception, it sets status to "failed" with the error context.
+
+### Phase 10 — US5: PPTX Support (Session 3)
+
+**Tasks Completed:** T085, T086, T087, T088
+
+1. **pptx_extractor.py (T085)** — Built slide extraction module (310 lines) with full support for:
+   - Text extraction from slide shapes with formatting preserved
+   - Table extraction via python-pptx; tables are converted to intermediate markdown format for reuse
+   - Image extraction with embedded PNG conversion; alt text sourced from slide notes
+   - Graceful handling of missing/empty shapes (no crashes on edge cases)
+   - Returns `PageResult[]` compatible with existing html_builder pipeline
+
+2. **html_builder.py PPTX support (T086)** — Extended HTML builder to handle PPTX:
+   - Each slide becomes an `<section>` with slide number + title in `<h2>`
+   - Tables are converted to WCAG-compliant `<table>` markup via existing `_convert_markdown_table_to_html()` function (avoids duplication)
+   - Images are embedded as `<img>` tags with alt text from slide notes
+   - Heading hierarchy is validated (same 7 WCAG rules apply to PPTX output)
+   - No changes to PDF/DOCX pipeline (full backward compatibility)
+
+3. **function_app.py PPTX routing (T087)** — Added PPTX dispatch:
+   - `POST /api/convert` now detects `application/vnd.openxmlformats-officedocument.presentationml.presentation` content type
+   - Routes to `pptx_extractor.extract_pptx(blob_stream)` via the existing dispatcher pattern
+   - No new endpoints; transparent to frontend
+
+4. **Unit + Integration tests (T088)** — Full test coverage (40 tests):
+   - 22 unit tests for pptx_extractor: text extraction, table parsing, image handling, graceful failures
+   - 18 integration tests for PPTX conversion: end-to-end flow, WCAG validation, metadata tracking
+   - All tests pass; no regressions to PDF/DOCX
+
+5. **Key architectural insight:** PPTX extraction returns `PageResult[]` (same type as PDF/DOCX), allowing full reuse of html_builder, wcag_validator, and status tracking. The conversion pipeline treats all three formats uniformly — only the extractor changes per format.
+
+6. **Build verified** — `pytest tests/` passes all 40 new tests plus existing suite. No breaking changes to backend API.
+

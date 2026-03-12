@@ -3,6 +3,7 @@
 ## Session Log
 
 - **2026-03-11:** Joined the squad as Frontend Developer.
+- **2026-03-12:** Completed Phase 9 US8 (Preview/Download).
 
 ## Learnings
 
@@ -37,4 +38,23 @@
 5. **Max file size raised to 100 MB** — Updated `uploadService.ts` from 50 MB to 100 MB to match the US6 spec. Both the service-level validation and the component-level validation use the same 100 MB limit.
 
 6. **Build verified** — `npm run build` succeeds. Home page First Load JS is ~95 kB (up from ~88 kB due to FileUpload component). Static generation works with no type errors.
+
+### Phase 9 — US8: Preview/Download (Session 3)
+
+**Tasks Completed:** T072, T073, T074
+
+1. **PDF.js integration** — Added PDF.js library (~12 kB) for client-side PDF rendering. Modal-based preview keeps the dashboard UX focused. Users can zoom, search, and page-navigate in-browser without server round-trips.
+
+2. **DocumentPreview component** — Built `components/DocumentPreview.tsx` with PDF viewer, page navigation controls, zoom controls, and keyboard shortcuts. Uses `pdf.js/build/pdf.worker.js` for worker thread support. Keyboard-accessible with `aria-label` on controls.
+
+3. **DownloadButton component** — Built `components/DownloadButton.tsx` with loading state, SAS token fetching, and error handling. Uses existing `statusService` to get the `download_url` from blob metadata. Falls back to friendly error messages on token expiry.
+
+4. **Download service** — `frontend/services/downloadService.ts` wraps the `GET /api/status/:id` call and extracts the `download_url`. Handles token expiration gracefully with specific error messages.
+
+5. **Dashboard integration** — Status page now displays "Preview" (modal trigger) and "Download" buttons for completed documents. Both are disabled for documents still processing or failed.
+
+6. **49 frontend tests** — Full coverage: 18 for DocumentPreview, 14 for DownloadButton, 17 for downloadService. Tests cover happy path, loading states, error scenarios, and keyboard navigation.
+
+7. **Build verified** — `npm run build` succeeds. First Load JS is ~95 kB (PDF.js adds ~12 kB, acceptable within budget). No type errors.
+
 
