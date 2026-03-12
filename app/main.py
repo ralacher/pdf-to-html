@@ -19,6 +19,8 @@ import logging
 import os
 import sys
 import uuid
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 from azure.core.exceptions import ResourceNotFoundError
@@ -67,6 +69,42 @@ def configure_logging() -> None:
 configure_logging()
 logger = logging.getLogger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# Lifespan — ensure storage containers & queue exist (idempotent)
+# ---------------------------------------------------------------------------
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    """Create blob containers and queue on startup if they don't exist.
+
+    This is especially important for local development with Azurite where the
+    emulator starts with a clean slate.  Failures are non-fatal — the
+    containers may already exist in production.
+    """
+    try:
+        blob_service = get_blob_service_client()
+        for container_name in [settings.INPUT_CONTAINER, settings.OUTPUT_CONTAINER]:
+            try:
+                blob_service.get_container_client(container_name).create_container()
+                logger.info("Created container: %s", container_name)
+            except Exception:
+                pass  # Already exists — totally fine
+
+        # Create the conversion-jobs queue
+        try:
+            get_queue_client().create_queue()
+            logger.info("Created queue: %s", settings.QUEUE_NAME)
+        except Exception:
+            pass  # Already exists
+    except Exception:
+        logger.warning(
+            "Could not initialise storage during startup — "
+            "containers / queue may need to be created manually."
+        )
+    yield
+
+
 # ---------------------------------------------------------------------------
 # Application factory
 # ---------------------------------------------------------------------------
@@ -75,6 +113,7 @@ app = FastAPI(
     title="PDF-to-HTML WCAG Converter",
     version="1.0.0",
     description="Converts PDF, DOCX and PPTX documents to WCAG 2.1 AA compliant HTML.",
+    lifespan=lifespan,
 )
 
 # ---------------------------------------------------------------------------
@@ -110,40 +149,6 @@ def _file_extension(filename: str) -> str:
     if "." not in filename:
         return ""
     return "." + filename.rsplit(".", 1)[-1].lower()
-
-
-# ---------------------------------------------------------------------------
-# Startup — ensure storage containers & queue exist (idempotent)
-# ---------------------------------------------------------------------------
-
-@app.on_event("startup")
-async def startup() -> None:
-    """Create blob containers and queue if they don't already exist.
-
-    This is especially important for local development with Azurite where the
-    emulator starts with a clean slate.  Failures are non-fatal — the
-    containers may already exist in production.
-    """
-    try:
-        blob_service = get_blob_service_client()
-        for container_name in [settings.INPUT_CONTAINER, settings.OUTPUT_CONTAINER]:
-            try:
-                blob_service.get_container_client(container_name).create_container()
-                logger.info("Created container: %s", container_name)
-            except Exception:
-                pass  # Already exists — totally fine
-
-        # Create the conversion-jobs queue
-        try:
-            get_queue_client().create_queue()
-            logger.info("Created queue: %s", settings.QUEUE_NAME)
-        except Exception:
-            pass  # Already exists
-    except Exception:
-        logger.warning(
-            "Could not initialise storage during startup — "
-            "containers / queue may need to be created manually."
-        )
 
 
 # ---------------------------------------------------------------------------

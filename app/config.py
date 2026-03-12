@@ -43,9 +43,7 @@ class Settings(BaseSettings):
         """Return the best available storage connection string."""
         return self.AZURE_STORAGE_CONNECTION_STRING or self.AzureWebJobsStorage or ""
 
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()

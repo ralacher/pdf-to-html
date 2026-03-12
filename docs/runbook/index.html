@@ -858,6 +858,7 @@
       <div class="header-logo">WCAG Converter Runbook</div>
       <nav role="navigation" aria-label="Table of contents">
         <ul class="header-nav">
+          <li><a href="#quickstart">Quick Start</a></li>
           <li><a href="#architecture">Architecture</a></li>
           <li><a href="#deployment">Deploy</a></li>
           <li><a href="#monitoring">Monitor</a></li>
@@ -874,7 +875,7 @@
       <h1 class="hero-title">NCDIT WCAG Converter<br>Operations Runbook</h1>
       <p class="hero-subtitle">Deployment, monitoring, and incident response for North Carolina's document accessibility platform</p>
       <div class="hero-meta">
-        <span class="badge badge-version">v1.0.0</span>
+        <span class="badge badge-version">v2.0.0 — Container Apps</span>
         <span class="badge badge-date">Updated March 2026</span>
         <span class="badge badge-classification">Internal</span>
       </div>
@@ -887,7 +888,7 @@
         </div>
         <div class="tile tile--emerald">
           <span class="tile-icon">🧪</span>
-          <div class="tile-value">176</div>
+          <div class="tile-value">228</div>
           <div class="tile-label">Tests Passing</div>
         </div>
         <div class="tile tile--amber">
@@ -906,14 +907,141 @@
           <div class="tile-label">WCAG Compliance</div>
         </div>
       </div>
+
+      <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+        <a href="https://ca-pdftohtml-frontend.blackplant-e84b1473.eastus.azurecontainerapps.io" target="_blank" rel="noopener" class="hero-cta" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.85rem 2rem; background: var(--accent-emerald); color: #fff; font-family: var(--font-heading); font-weight: 700; font-size: 1.05rem; border-radius: 8px; text-decoration: none; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 16px rgba(16,185,129,0.35);">
+          🚀 Try It Now — Upload a Document
+        </a>
+        <a href="#quickstart" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.85rem 2rem; background: transparent; color: var(--accent-sky); font-family: var(--font-heading); font-weight: 600; font-size: 1.05rem; border-radius: 8px; text-decoration: none; border: 2px solid var(--accent-sky); transition: background 0.15s;">
+          📖 Quick Start Guide
+        </a>
+      </div>
     </div>
     
-    <!-- System Architecture -->
+    <!-- Quick Start -->
+    <section id="quickstart">
+      <span class="section-label section-label-info">Getting Started</span>
+      <h2>Quick Start — Test a Conversion in 60 Seconds</h2>
+      
+      <p>The fastest way to see the converter in action. No setup required — just a browser.</p>
+      
+      <div class="callout callout-success">
+        <div class="callout-icon">🌐</div>
+        <div class="callout-content">
+          <p><strong>Live App:</strong> <a href="https://ca-pdftohtml-frontend.blackplant-e84b1473.eastus.azurecontainerapps.io" target="_blank" rel="noopener" style="color: var(--accent-sky);">ca-pdftohtml-frontend.blackplant-e84b1473.eastus.azurecontainerapps.io</a></p>
+        </div>
+      </div>
+      
+      <h3>Upload &amp; Convert (Browser)</h3>
+      <ol>
+        <li>Open the <a href="https://ca-pdftohtml-frontend.blackplant-e84b1473.eastus.azurecontainerapps.io" target="_blank" rel="noopener" style="color: var(--accent-sky);">frontend app</a> in your browser</li>
+        <li>Drag &amp; drop a <strong>PDF, DOCX, or PPTX</strong> file onto the upload zone (or click to browse)</li>
+        <li>You'll be redirected to the <strong>Dashboard</strong> automatically</li>
+        <li>Watch the status change: <code>pending</code> → <code>processing</code> → <code>completed</code></li>
+        <li>Click <strong>Preview</strong> to see the accessible HTML inline, or <strong>Download</strong> to save it</li>
+      </ol>
+      
+      <h3>Upload &amp; Convert (CLI / curl)</h3>
+      
+      <div class="terminal">
+        <div class="terminal-header">
+          <span class="terminal-title">Quick Conversion Test</span>
+          <button class="copy-btn" onclick="copyCode(this, 'quickstart-cli')">Copy</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="quickstart-cli"><code><span class="terminal-comment"># Set the API base URL</span>
+<span class="terminal-prompt">$</span> API="https://ca-pdftohtml-api.blackplant-e84b1473.eastus.azurecontainerapps.io"
+
+<span class="terminal-comment"># Step 1: Get a SAS upload token</span>
+<span class="terminal-prompt">$</span> curl -s -X POST "$API/api/upload/sas-token" \
+  -H "Content-Type: application/json" \
+  -d '{"filename":"test.pdf","content_type":"application/pdf","size_bytes":12345}'
+
+<span class="terminal-comment"># Step 2: Upload your file to the returned upload_url</span>
+<span class="terminal-prompt">$</span> curl -X PUT "&lt;upload_url_from_step_1&gt;" \
+  -H "x-ms-blob-type: BlockBlob" \
+  --data-binary @your-file.pdf
+
+<span class="terminal-comment"># Step 3: Poll status until "completed"</span>
+<span class="terminal-prompt">$</span> curl -s "$API/api/documents/status"
+
+<span class="terminal-comment"># Step 4: Download the converted HTML</span>
+<span class="terminal-prompt">$</span> curl -s "$API/api/documents/&lt;document_id&gt;/download"</code></pre>
+        </div>
+      </div>
+      
+      <h3>What to Expect</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Input</th>
+              <th>Processing Time</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Digital PDF (text-based)</td>
+              <td>&lt; 30 seconds</td>
+              <td>WCAG 2.1 AA HTML with headings, tables, images</td>
+            </tr>
+            <tr>
+              <td>Scanned PDF (image-only)</td>
+              <td>1–3 minutes</td>
+              <td>OCR-extracted HTML with confidence flags</td>
+            </tr>
+            <tr>
+              <td>Word Document (.docx)</td>
+              <td>&lt; 15 seconds</td>
+              <td>Preserves headings, styles, tables</td>
+            </tr>
+            <tr>
+              <td>PowerPoint (.pptx)</td>
+              <td>&lt; 15 seconds</td>
+              <td>One section per slide, speaker notes included</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="callout callout-info">
+        <div class="callout-icon">♿</div>
+        <div class="callout-content">
+          <p><strong>Every conversion includes:</strong> <code>lang="en"</code> attribute, skip navigation link, heading hierarchy enforcement (no skipped levels), <code>&lt;th scope&gt;</code> on tables, <code>alt</code> text on images, and 4.5:1 color contrast ratio.</p>
+        </div>
+      </div>
+      
+      <h3>Local Development</h3>
+      
+      <div class="terminal">
+        <div class="terminal-header">
+          <span class="terminal-title">Run Locally with Docker Compose</span>
+          <button class="copy-btn" onclick="copyCode(this, 'local-dev')">Copy</button>
+        </div>
+        <div class="terminal-body">
+          <pre id="local-dev"><code><span class="terminal-comment"># Clone and start all services (Azurite + API + Worker + Frontend)</span>
+<span class="terminal-prompt">$</span> git clone https://github.com/msftsean/pdf-to-html.git
+<span class="terminal-prompt">$</span> cd pdf-to-html
+<span class="terminal-prompt">$</span> docker-compose up --build
+
+<span class="terminal-comment"># Services start on:</span>
+<span class="terminal-comment">#   Frontend:  http://localhost:3000</span>
+<span class="terminal-comment">#   API:       http://localhost:8000</span>
+<span class="terminal-comment">#   Azurite:   http://localhost:10000 (blob emulator)</span>
+
+<span class="terminal-comment"># Run tests</span>
+<span class="terminal-prompt">$</span> pytest tests/ -v                    <span class="terminal-comment"># Backend (174+ tests)</span>
+<span class="terminal-prompt">$</span> cd frontend &amp;&amp; npm test             <span class="terminal-comment"># Frontend (58 tests)</span>
+<span class="terminal-prompt">$</span> npx playwright test                 <span class="terminal-comment"># E2E (27 tests)</span></code></pre>
+        </div>
+      </div>
+    </section>
     <section id="architecture">
       <span class="section-label">Section 01</span>
       <h2>System Architecture</h2>
       
-      <p>The NCDIT WCAG Document Converter is a serverless document processing pipeline built on Azure Functions. Files uploaded through the Next.js frontend are stored in Azure Blob Storage, triggering automated conversion workflows that extract content, apply WCAG compliance rules, and generate accessible HTML output.</p>
+      <p>The NCDIT WCAG Document Converter is a containerized document processing pipeline deployed on Azure Container Apps. Files uploaded through the Next.js frontend are stored in Azure Blob Storage. Event Grid routes blob-created events to a Storage Queue, which a KEDA-scaled worker container consumes to extract content, apply WCAG compliance rules, and generate accessible HTML output.</p>
       
       <div class="arch-diagram" role="img" aria-label="System architecture diagram">
         <div class="arch-flow">
@@ -922,13 +1050,13 @@
             <span class="arch-arrow">→</span>
             <div class="arch-node">Azure Blob Storage</div>
             <span class="arch-arrow">→</span>
-            <div class="arch-node">Blob Trigger</div>
+            <div class="arch-node">Event Grid → Queue</div>
           </div>
           
           <div class="arch-arrow-down">↓</div>
           
           <div class="arch-row">
-            <div class="arch-node arch-node-primary">Document Router</div>
+            <div class="arch-node arch-node-primary">Worker Container (KEDA-scaled)</div>
           </div>
           
           <div class="arch-arrow-down">↓</div>
@@ -978,8 +1106,8 @@
           <tbody>
             <tr>
               <td><strong>Backend</strong></td>
-              <td><code>Azure Functions (Python 3.12)</code></td>
-              <td>Document processing pipeline</td>
+              <td><code>Azure Container Apps (FastAPI + Uvicorn)</code></td>
+              <td>HTTP API (app/main.py) + Queue Worker (app/worker.py)</td>
             </tr>
             <tr>
               <td><strong>Frontend</strong></td>

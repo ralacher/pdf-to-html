@@ -286,7 +286,6 @@ resource frontendApp 'Microsoft.App/containerApps@2024-03-01' = {
           }
           env: [
             { name: 'NODE_ENV', value: 'production' }
-            { name: 'NEXT_PUBLIC_API_URL', value: 'https://${apiApp.properties.configuration.ingress.fqdn}' }
             // BACKEND_URL is baked into Next.js rewrites at build time via --build-arg in
             // deploy-aca.yml. We also set it here so Bicep deployments don't wipe the value
             // and for documentation/consistency with the deploy workflow.

@@ -142,3 +142,4 @@ __azurite_db*__.json
 .staticrypt.json
 encrypted/
 .env.cloudforce
+SECURITY_AUDIT_REPORT.md

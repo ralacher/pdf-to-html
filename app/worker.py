@@ -188,6 +188,7 @@ class ConversionWorker:
         logger.info("Processing file: %s (%d bytes)", blob_name, len(file_data))
 
         # --- Reconstruct metadata if wiped by SAS upload ------------------
+        existing_meta: dict[str, str] = {}
         try:
             props = blob_client.get_blob_properties()
             existing_meta = dict(props.metadata or {})
@@ -373,7 +374,7 @@ class ConversionWorker:
 
             # Derive output path: use original filename with datestamp
             # e.g. "2026-03-12_Advice_for_Spec_Microsoft.txt" instead of UUID
-            original_fn = meta.get("original_filename", base_filename)
+            original_fn = existing_meta.get("original_filename", base_filename)
             original_stem = original_fn
             for known_ext in (".pdf", ".docx", ".pptx"):
                 if original_stem.lower().endswith(known_ext):
@@ -517,6 +518,13 @@ def main() -> None:
     logging.basicConfig(
         level=getattr(logging, log_level, logging.INFO), handlers=[handler]
     )
+
+    # Suppress Azure SDK HTTP-level chatter so app logs are visible
+    logging.getLogger("azure").setLevel(logging.WARNING)
+    logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
+        logging.WARNING
+    )
+
     worker = ConversionWorker()
     worker.start()
 
