@@ -64,8 +64,19 @@ class OcrPageResult:
 
 
 def _get_client() -> DocumentIntelligenceClient:
-    """Create a Document Intelligence client using Entra ID authentication."""
+    """Create a Document Intelligence client.
+
+    Uses API key (DOCUMENT_INTELLIGENCE_KEY) if set, otherwise falls back
+    to Entra ID via DefaultAzureCredential.
+    """
     endpoint = os.environ["DOCUMENT_INTELLIGENCE_ENDPOINT"]
+    key = os.environ.get("DOCUMENT_INTELLIGENCE_KEY")
+    if key:
+        from azure.core.credentials import AzureKeyCredential
+        return DocumentIntelligenceClient(
+            endpoint=endpoint,
+            credential=AzureKeyCredential(key),
+        )
     return DocumentIntelligenceClient(
         endpoint=endpoint,
         credential=DefaultAzureCredential(),
