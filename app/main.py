@@ -77,9 +77,24 @@ app = FastAPI(
     description="Converts PDF, DOCX and PPTX documents to WCAG 2.1 AA compliant HTML.",
 )
 
+# ---------------------------------------------------------------------------
+# CORS — explicit origins required for allow_credentials=True (F6/F15)
+# Override via comma-separated ALLOWED_ORIGINS env var per environment.
+# ---------------------------------------------------------------------------
+_default_origins = [
+    "https://ca-pdftohtml-frontend.blackplant-e84b1473.eastus.azurecontainerapps.io",
+    "http://localhost:3000",
+]
+_env_origins = os.environ.get("ALLOWED_ORIGINS", "")
+_allowed_origins: list[str] = (
+    [o.strip() for o in _env_origins.split(",") if o.strip()]
+    if _env_origins
+    else _default_origins
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

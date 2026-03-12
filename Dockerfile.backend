@@ -17,13 +17,19 @@ FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 
+# Non-root user for security (mirrors frontend/Dockerfile pattern)
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 appuser
+
 # Copy installed packages and uvicorn binary from the builder stage
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
-# Copy application code
-COPY app/  ./app/
-COPY backend/ ./backend/
+# Copy application code (owned by non-root user)
+COPY --chown=appuser:appgroup app/  ./app/
+COPY --chown=appuser:appgroup backend/ ./backend/
+
+USER appuser
 
 EXPOSE 8000
 
